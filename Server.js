@@ -25,7 +25,20 @@ function updatePhysics(){
     let p=players[id]; let speed=p.speed||1;
     if(p.fly){p.vy=0; if(p.keys.left)p.x-=5*speed; if(p.keys.right)p.x+=5*speed; if(p.keys.jump)p.y-=5*speed;}
     else{if(p.keys.left)p.vx=-5*speed; else if(p.keys.right)p.vx=5*speed; else p.vx=0;if(p.keys.jump&&p.onGround){p.vy=-12*speed; p.onGround=false}p.vy+=GRAVITY; p.x+=p.vx; p.y+=p.vy; p.onGround=false;for(let plat of platforms){if(rectCollision(p,plat)&&p.vy>0){p.y=plat.y-p.h; p.vy=0; p.onGround=true}}if(p.y>600&&!p.god){p.score=Math.max(0,p.score-1); p.x=50; p.y=500}}
-    if(boss&&rectCollision(p,boss)&&p.vy>0&&p.y<boss.y){boss.hp--; p.vy=-10; bossDefeated=true; if(boss.hp<=0){for(let pid in players)players[pid].level++; platforms=generateLevel(level+1); if(level>=MAX_LEVELS){gameOver=true; winner=p.name}}}
+
+    // FIXED BOSS FIGHT LOGIC
+    if(boss&&rectCollision(p,boss)&&p.vy>0&&p.y<boss.y){
+      boss.hp--;
+      p.vy=-10;
+      bossDefeated=true;
+      if(boss.hp<=0){
+        level++; // NOW LEVEL ACTUALLY INCREASES
+        for(let pid in players)players[pid].level = level; // sync all players
+        platforms=generateLevel(level); // generate next level
+        if(level>=MAX_LEVELS){gameOver=true; winner=p.name}
+      }
+    }
+
     let dx=p.x+p.w/2-coin.x; let dy=p.y+p.h/2-coin.y; if(Math.sqrt(dx*dx+dy*dy)<coin.r+p.w/2&&!boss){p.score++; coinCollected=true; coin.x=Math.random()*700+50; coin.y=Math.random()*300+100;}
     if(p.x<0)p.x=0; if(p.x>800-p.w)p.x=800-p.w;
   }
