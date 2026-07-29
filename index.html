@@ -37,7 +37,6 @@
 </head>
 <body class="h-screen w-screen flex flex-col justify-between items-center p-2 md:p-4 select-none overflow-hidden">
 
-    <!-- Header / HUD -->
     <header class="w-full max-w-4xl flex justify-between items-center bg-gray-900/80 border border-gray-800 rounded-xl px-4 py-2 backdrop-blur z-10 shrink-0">
         <div class="flex items-center space-x-4">
             <h1 class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">CYBER DASH</h1>
@@ -62,17 +61,14 @@
         </div>
     </header>
 
-    <!-- Main Game Container -->
     <main class="relative w-full max-w-4xl flex-1 flex items-center justify-center my-2 min-h-0 overflow-hidden">
         <canvas id="gameCanvas" class="rounded-xl border border-gray-800 bg-slate-950 w-full max-h-full object-contain"></canvas>
 
-        <!-- Banner for Level Clear -->
         <div id="level-clear-banner" class="hidden absolute bg-cyan-950/90 border-2 border-cyan-400 rounded-2xl px-8 py-4 text-center z-30 shadow-2xl backdrop-blur-md">
             <h3 class="text-2xl md:text-3xl font-black text-cyan-300 tracking-wider mb-1">PORTAL REACHED!</h3>
             <p class="text-yellow-400 font-bold text-sm md:text-base">HEARTS RESTORED TO 5 ❤️</p>
         </div>
 
-        <!-- Overlay Screen -->
         <div id="overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md rounded-xl flex flex-col items-center justify-center text-center p-6 z-20">
             <h2 id="overlay-title" class="text-4xl md:text-6xl font-black mb-2 text-cyan-400 tracking-wider">CYBER DASH</h2>
             <p id="overlay-subtitle" class="text-gray-300 text-sm md:text-base max-w-md mb-8">
@@ -84,7 +80,6 @@
         </div>
     </main>
 
-    <!-- Touch Controls -->
     <footer class="w-full max-w-4xl flex md:hidden justify-between items-center px-4 py-2 gap-4 z-10 shrink-0">
         <div class="flex gap-2">
             <button id="btn-left" class="w-16 h-16 bg-gray-800/80 active:bg-cyan-600 text-2xl text-white rounded-2xl flex items-center justify-center border border-gray-700">◀</button>
@@ -94,7 +89,6 @@
     </footer>
 
     <script>
-        // --- Web Audio API Synthesizer ---
         class SoundFX {
             constructor() {
                 this.ctx = null;
@@ -187,7 +181,6 @@
 
         const audio = new SoundFX();
 
-        // --- Game Setup ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -207,7 +200,6 @@
         const keys = { left: false, right: false, up: false, jumpPressed: false };
         const touchState = { left: false, right: false, jump: false, jumpPressed: false };
 
-        // Particle System
         let particles = [];
         function createParticles(x, y, color, count = 10) {
             for (let i = 0; i < count; i++) {
@@ -223,7 +215,6 @@
             }
         }
 
-        // --- Infinite Procedural Level Generator (Guaranteed Solvable) ---
         function generateProceduralLevel(levelNum) {
             const level = {
                 playerStart: { x: 50, y: 310 },
@@ -344,7 +335,6 @@
             return level;
         }
 
-        // --- Player Object ---
         const player = {
             x: 0, y: 0,
             w: 24, h: 32,
@@ -492,308 +482,4 @@
         };
 
         function isColliding(r1, r2) {
-            return !(r1.x + r1.w <= r2.x ||
-                     r1.x >= r2.x + r2.w ||
-                     r1.y + r1.h <= r2.y ||
-                     r1.y >= r2.y + r2.h);
-        }
-
-        function takeDamage() {
-            if (player.invulnerable > 0 || gameState !== 'PLAYING') return;
-            lives--;
-            audio.playHurt();
-            createParticles(player.x + player.w/2, player.y + player.h/2, '#ef4444', 20);
-
-            updateHUD();
-
-            if (lives <= 0) {
-                gameOver();
-            } else {
-                player.reset(activeLevel.playerStart);
-            }
-        }
-
-        function triggerPortal() {
-            if (gameState !== 'PLAYING') return;
-            gameState = 'TRANSITION';
-            audio.playWin();
-            score += 250;
-            
-            const banner = document.getElementById('level-clear-banner');
-            banner.classList.remove('hidden');
-
-            setTimeout(() => {
-                banner.classList.add('hidden');
-                currentLevelIndex++;
-                loadLevel(currentLevelIndex);
-                gameState = 'PLAYING';
-            }, 1000);
-        }
-
-        function loadLevel(levelNum) {
-            lives = MAX_LIVES;
-            activeLevel = generateProceduralLevel(levelNum);
-            player.reset(activeLevel.playerStart);
-            updateHUD();
-        }
-
-        function updateHUD() {
-            document.getElementById('score-display').innerText = score;
-            document.getElementById('lives-display').innerText = lives;
-            document.getElementById('level-display').innerText = currentLevelIndex;
-        }
-
-        function gameOver() {
-            gameState = 'GAMEOVER';
-            showOverlay('GAME OVER', `You reached Level ${currentLevelIndex} with a score of ${score}!`, 'RETRY RUN');
-        }
-
-        function showOverlay(title, subtitle, btnText) {
-            document.getElementById('overlay-title').innerText = title;
-            document.getElementById('overlay-subtitle').innerText = subtitle;
-            document.getElementById('start-btn').innerText = btnText;
-            document.getElementById('overlay').classList.remove('hidden');
-        }
-
-        function startGame() {
-            audio.init();
-            score = 0;
-            currentLevelIndex = 1;
-            loadLevel(currentLevelIndex);
-            gameState = 'PLAYING';
-            document.getElementById('overlay').classList.add('hidden');
-        }
-
-        // --- Render Functions ---
-        function drawBackground() {
-            ctx.fillStyle = '#090d16';
-            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 1;
-            const gridSize = 40;
-            for (let x = 0; x < GAME_WIDTH; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, GAME_HEIGHT);
-                ctx.stroke();
-            }
-            for (let y = 0; y < GAME_HEIGHT; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(GAME_WIDTH, y);
-                ctx.stroke();
-            }
-        }
-
-        function drawLevel(level) {
-            const allPlatforms = [...level.platforms, ...(level.movingPlatforms || [])];
-            allPlatforms.forEach(p => {
-                ctx.fillStyle = p.color || '#1e293b';
-                ctx.fillRect(p.x, p.y, p.w, p.h);
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(p.x, p.y, p.w, p.h);
-            });
-
-            if (level.movingPlatforms && gameState === 'PLAYING') {
-                level.movingPlatforms.forEach(p => {
-                    p.x += p.speed * p.dir;
-                    if (p.x <= p.startX || p.x + p.w >= p.endX) {
-                        p.dir *= -1;
-                    }
-                });
-            }
-
-            if (level.trampolines) {
-                level.trampolines.forEach(t => {
-                    let offset = 0;
-                    if (t.bounceAnim > 0) {
-                        offset = t.bounceAnim;
-                        t.bounceAnim--;
-                    }
-                    ctx.fillStyle = '#22c55e';
-                    ctx.fillRect(t.x, t.y + offset/2, t.w, t.h - offset/2);
-                    ctx.fillStyle = '#15803d';
-                    ctx.fillRect(t.x + 2, t.y + t.h, t.w - 4, 4);
-                });
-            }
-
-            level.hazards.forEach(h => {
-                ctx.fillStyle = '#ef4444';
-                const spikeWidth = 10;
-                const count = Math.floor(h.w / spikeWidth);
-                for (let i = 0; i < count; i++) {
-                    ctx.beginPath();
-                    ctx.moveTo(h.x + i * spikeWidth, h.y + h.h);
-                    ctx.lineTo(h.x + (i + 0.5) * spikeWidth, h.y);
-                    ctx.lineTo(h.x + (i + 1) * spikeWidth, h.y + h.h);
-                    ctx.closePath();
-                    ctx.fill();
-                }
-
-                if (isColliding(player, h) && gameState === 'PLAYING') {
-                    takeDamage();
-                }
-            });
-
-            if (level.enemies) {
-                level.enemies.forEach(e => {
-                    if (gameState === 'PLAYING') {
-                        e.x += e.speed * e.dir;
-                        if (e.x <= e.range[0] || e.x + e.w >= e.range[1]) {
-                            e.dir *= -1;
-                        }
-                    }
-
-                    ctx.fillStyle = '#f43f5e';
-                    ctx.fillRect(e.x, e.y, e.w, e.h);
-                    ctx.fillStyle = '#fde047';
-                    ctx.fillRect(e.x + (e.dir > 0 ? 12 : 2), e.y + 4, 6, 4);
-
-                    if (isColliding(player, e) && gameState === 'PLAYING') {
-                        takeDamage();
-                    }
-                });
-            }
-
-            if (level.activeCoins) {
-                for (let i = level.activeCoins.length - 1; i >= 0; i--) {
-                    const c = level.activeCoins[i];
-                    ctx.fillStyle = '#facc15';
-                    ctx.beginPath();
-                    ctx.arc(c.x, c.y, 8, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.strokeStyle = '#fef08a';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-
-                    if (gameState === 'PLAYING') {
-                        const dist = Math.hypot((player.x + player.w/2) - c.x, (player.y + player.h/2) - c.y);
-                        if (dist < 20) {
-                            level.activeCoins.splice(i, 1);
-                            score += 50;
-                            audio.playCoin();
-                            createParticles(c.x, c.y, '#facc15', 8);
-                            updateHUD();
-                        }
-                    }
-                }
-            }
-
-            // Draw Warp Portal
-            const p = level.portal;
-            const portalTime = Date.now() * 0.003;
-            ctx.save();
-            ctx.translate(p.x + 15, p.y + 25);
-            ctx.rotate(portalTime);
-            ctx.fillStyle = '#a855f7';
-            ctx.fillRect(-15, -15, 30, 30);
-            ctx.strokeStyle = '#c084fc';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(-20, -20, 40, 40);
-            ctx.restore();
-
-            if (isColliding(player, { x: p.x, y: p.y, w: 30, h: 50 }) && gameState === 'PLAYING') {
-                triggerPortal();
-            }
-        }
-
-        function updateAndDrawParticles() {
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.alpha -= 0.03;
-                p.life--;
-
-                if (p.life <= 0 || p.alpha <= 0) {
-                    particles.splice(i, 1);
-                    continue;
-                }
-
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, p.alpha);
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        function gameLoop() {
-            drawBackground();
-
-            if ((gameState === 'PLAYING' || gameState === 'TRANSITION') && activeLevel) {
-                if (gameState === 'PLAYING') {
-                    player.update(activeLevel);
-                }
-                drawLevel(activeLevel);
-                player.draw();
-                updateAndDrawParticles();
-            } else if (gameState === 'START' || gameState === 'GAMEOVER') {
-                // Initial background draw for start screen state
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
-            if ((e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') && !keys.up) {
-                keys.up = true;
-                keys.jumpPressed = true;
-                e.preventDefault();
-            }
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
-            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') {
-                keys.up = false;
-            }
-        });
-
-        const bindTouch = (btnId, keyName) => {
-            const btn = document.getElementById(btnId);
-            if (!btn) return;
-            
-            const start = (e) => { 
-                e.preventDefault(); 
-                if (keyName === 'jump') {
-                    touchState.jumpPressed = true;
-                }
-                touchState[keyName] = true; 
-            };
-            
-            const end = (e) => { 
-                e.preventDefault(); 
-                touchState[keyName] = false; 
-            };
-
-            btn.addEventListener('touchstart', start);
-            btn.addEventListener('touchend', end);
-            btn.addEventListener('mousedown', start);
-            btn.addEventListener('mouseup', end);
-        };
-
-        bindTouch('btn-left', 'left');
-        bindTouch('btn-right', 'right');
-        bindTouch('btn-jump', 'jump');
-
-        document.getElementById('start-btn').addEventListener('click', startGame);
-
-        document.getElementById('btn-audio').addEventListener('click', () => {
-            audio.enabled = !audio.enabled;
-            document.getElementById('btn-audio').innerText = audio.enabled ? '🔊' : '🔇';
-        });
-
-        window.onload = () => {
-            gameLoop();
-        };
-    </script>
-</body>
-</html>
+            return !(r1.x +
