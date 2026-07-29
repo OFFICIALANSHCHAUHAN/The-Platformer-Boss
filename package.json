@@ -1,12 +1,16 @@
 {
-  "name": "cyber-dash-multiplayer",
+  "name": "the-platformer-boss",
   "version": "1.0.0",
+  "description": "50 Level 2D Platformer with Admin Mode",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "socket.io": "^4.7.5"
+    "express": "^4.18.2",
+    "ws": "^8.14.2"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
