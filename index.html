@@ -1,484 +1,206 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Dash - Endless Platformer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        * {
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-        body {
-            background-color: #0d1117;
-            color: #f0f6fc;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            overflow: hidden;
-        }
-        canvas {
-            image-rendering: pixelated;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            aspect-ratio: 16 / 9;
-        }
-        .btn-glow {
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
-            transition: all 0.2s ease;
-        }
-        .btn-glow:hover {
-            box-shadow: 0 0 25px rgba(59, 130, 246, 0.8);
-            transform: translateY(-2px);
-        }
-        .btn-glow:active {
-            transform: translateY(1px);
-        }
-    </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CYBER DASH 50 LEVELS</title>
+<style>
+body{margin:0;background:#060814;font-family:'Arial';overflow:hidden;color:white}
+#hud{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#0a1020}
+#title{color:#00d4ff;font-weight:bold;font-size:16px}
+#stats{display:flex;gap:10px;align-items:center}
+.badge{background:#1a2340;padding:5px 8px;border-radius:8px;font-size:12px}
+#level{color:#00d4ff;font-weight:bold}
+#hearts{color:#ff0055}
+canvas{display:block;background:#060814;margin:0 auto}
+#grid{background-image:linear-gradient(#112240 1px,transparent 1px),linear-gradient(90deg,#112240 1px,transparent 1px);background-size:40px 40px}
+#controls{display:flex;justify-content:space-between;padding:20px}
+.btn{width:80px;height:80px;background:#1a2340;border:2px solid #00d4ff;border-radius:20px;color:white;font-size:30px;display:flex;align-items:center;justify-content:center;user-select:none}
+#jump{width:100px;height:100px;background:#0055ff;border-color:#00aaff;font-size:18px;font-weight:bold}
+#adminMenu{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#0a1020;border:2px solid #ff00ff;padding:20px;border-radius:10px;display:none;z-index:100}
+#adminMenu input{width:60px;margin:5px;background:#1a2340;color:#00d4ff;border:1px solid #00d4ff}
+#adminMenu button{margin:5px;padding:8px;background:#ff00ff;color:white;border:none;border-radius:5px}
+#win{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#0a1020;padding:30px;border-radius:15px;border:2px solid #00d4ff;font-size:24px;text-align:center;display:none;z-index:100}
+</style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-between items-center p-2 md:p-4 select-none overflow-hidden">
+<body>
+<div id="hud">
+  <div id="title">CYBER<br>DASH</div>
+  <div id="stats">
+    <div class="badge">LVL <span id="level">1</span>/50</div>
+    <div class="badge">❤️ <span id="hearts">0</span>/10</div>
+  </div>
+</div>
 
-    <header class="w-full max-w-4xl flex justify-between items-center bg-gray-900/80 border border-gray-800 rounded-xl px-4 py-2 backdrop-blur z-10 shrink-0">
-        <div class="flex items-center space-x-4">
-            <h1 class="text-xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">CYBER DASH</h1>
-            <div class="bg-gray-800 px-3 py-1 rounded-lg border border-gray-700 flex items-center space-x-2">
-                <span class="text-xs text-gray-400 uppercase tracking-wider">Level</span>
-                <span id="level-display" class="font-bold text-cyan-400">1</span>
-            </div>
-        </div>
-        
-        <div class="flex items-center space-x-6">
-            <div class="flex items-center space-x-1">
-                <span class="text-yellow-400 text-lg">⚡</span>
-                <span id="score-display" class="font-mono font-bold text-lg text-yellow-300">0</span>
-            </div>
-            <div class="flex items-center space-x-1">
-                <span class="text-red-500 text-lg">❤️</span>
-                <span id="lives-display" class="font-mono font-bold text-lg text-red-400">5</span>
-            </div>
-            <button id="btn-audio" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 transition" aria-label="Toggle Audio">
-                🔊
-            </button>
-        </div>
-    </header>
+<canvas id="grid" width="800" height="400"></canvas>
 
-    <main class="relative w-full max-w-4xl flex-1 flex items-center justify-center my-2 min-h-0 overflow-hidden">
-        <canvas id="gameCanvas" class="rounded-xl border border-gray-800 bg-slate-950 w-full max-h-full object-contain"></canvas>
+<div id="controls">
+  <div style="display:flex;gap:10px">
+    <div class="btn" id="left">◀</div>
+    <div class="btn" id="right">▶</div>
+  </div>
+  <div class="btn" id="jump">JUMP</div>
+</div>
 
-        <!-- Banner for Level Clear -->
-        <div id="level-clear-banner" class="hidden absolute bg-cyan-950/90 border-2 border-cyan-400 rounded-2xl px-8 py-4 text-center z-30 shadow-2xl backdrop-blur-md">
-            <h3 class="text-2xl md:text-3xl font-black text-cyan-300 tracking-wider mb-1">PORTAL REACHED!</h3>
-            <p class="text-yellow-400 font-bold text-sm md:text-base">HEARTS RESTORED TO 5 ❤️</p>
-        </div>
+<div id="adminMenu">
+  <h3 style="color:#ff00ff;text-align:center">🔥 ADMIN MENU 🔥</h3>
+  <div>Level: <input type="number" id="adminLevel" min="1" max="50" value="1"></div>
+  <div>Hearts: <input type="number" id="adminHearts" min="0" max="10" value="0"></div>
+  <button onclick="applyAdmin()">Apply</button>
+  <button onclick="skipLevel()">Skip Level</button>
+  <button onclick="closeAdmin()">Close</button>
+</div>
 
-        <!-- Start / Game Over Screen -->
-        <div id="overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md rounded-xl flex flex-col items-center justify-center text-center p-6 z-20">
-            <h2 id="overlay-title" class="text-4xl md:text-6xl font-black mb-2 text-cyan-400 tracking-wider">CYBER DASH</h2>
-            <p id="overlay-subtitle" class="text-gray-300 text-sm md:text-base max-w-md mb-8">
-                Infinite procedural levels! Collect orbs, use trampolines, and hit the portal to move to the next level.
-            </p>
-            <button id="start-btn" class="btn-glow px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-lg tracking-wide uppercase cursor-pointer">
-                PLAY GAME
-            </button>
-        </div>
-    </main>
+<div id="win">🏆 YOU WON! 🏆<br>50 LEVELS COMPLETE<br><button onclick="location.reload()">Play Again</button></div>
 
-    <footer class="w-full max-w-4xl flex md:hidden justify-between items-center px-4 py-2 gap-4 z-10 shrink-0">
-        <div class="flex gap-2">
-            <button id="btn-left" class="w-16 h-16 bg-gray-800/80 active:bg-cyan-600 text-2xl text-white rounded-2xl flex items-center justify-center border border-gray-700">◀</button>
-            <button id="btn-right" class="w-16 h-16 bg-gray-800/80 active:bg-cyan-600 text-2xl text-white rounded-2xl flex items-center justify-center border border-gray-700">▶</button>
-        </div>
-        <button id="btn-jump" class="w-20 h-16 bg-blue-600/80 active:bg-blue-500 text-lg font-bold text-white rounded-2xl flex items-center justify-center border border-blue-400 shadow-lg">JUMP</button>
-    </footer>
+<script>
+const canvas = document.getElementById('grid');
+const ctx = canvas.getContext('2d');
 
-    <script>
-        class SoundFX {
-            constructor() {
-                this.ctx = null;
-                this.enabled = true;
-            }
+let player = {x:60,y:320,w:20,h:20,vx:0,vy:0,onGround:false}
+let keys = {left:false,right:false,jump:false}
+let level = 1, hearts = 0;
+let platforms = [];
+let heartItems = [];
+let gravity = 0.6;
 
-            init() {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-            }
+// ADMIN SECRET: Hold LEFT + RIGHT + JUMP for 5 seconds
+let comboTimer = null;
+let comboStart = 0;
 
-            playJump() {
-                if (!this.enabled || !this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(160, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(450, this.ctx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.15);
-            }
+function generateLevel(lvl){
+  platforms = [{x:0,y:360,w:800,h:40}]; // ground
+  heartItems = [];
+  
+  let platCount = 3 + Math.floor(lvl/5); // gets harder
+  for(let i=0;i<platCount;i++){
+    let gap = 120 + lvl*2;
+    platforms.push({x:100+i*gap%700, y:320-i*50, w:Math.max(60,120-lvl), h:10})
+  }
+  
+  // Spawn 10 hearts randomly on platforms
+  for(let i=0;i<10;i++){
+    let p = platforms[Math.floor(Math.random()*platforms.length)];
+    heartItems.push({x:p.x+p.w/2-10, y:p.y-20, w:20, h:20, collected:false})
+  }
+}
 
-            playBounce() {
-                if (!this.enabled || !this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.25);
-                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.25);
-            }
+function update(){
+  if(keys.left) player.vx = -5;
+  else if(keys.right) player.vx = 5;
+  else player.vx = 0;
+  
+  player.vy += gravity;
+  player.x += player.vx;
+  player.y += player.vy;
+  player.onGround = false;
+  
+  // platform collision
+  platforms.forEach(p=>{
+    if(player.x < p.x+p.w && player.x+player.w > p.x && 
+       player.y < p.y+p.h && player.y+player.h > p.y && player.vy>0){
+      player.y = p.y - player.h;
+      player.vy = 0;
+      player.onGround = true;
+    }
+  })
+  
+  // collect hearts
+  heartItems.forEach(h=>{
+    if(!h.collected && 
+       player.x < h.x+h.w && player.x+player.w > h.x && 
+       player.y < h.y+h.h && player.y+player.h > h.y){
+      h.collected = true;
+      hearts++;
+      document.getElementById('hearts').innerText = hearts;
+    }
+  })
+  
+  // next level
+  if(hearts >= 10){
+    if(level >= 50){
+      document.getElementById('win').style.display='block';
+    }else{
+      level++;
+      hearts = 0;
+      document.getElementById('level').innerText = level;
+      document.getElementById('hearts').innerText = hearts;
+      generateLevel(level);
+      player.x=60; player.y=320;
+    }
+  }
+  
+  // fall
+  if(player.y > 400){
+    player.x=60; player.y=320;
+  }
+}
 
-            playCoin() {
-                if (!this.enabled || !this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
-                osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08);
-                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.25);
-            }
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // platforms
+  ctx.fillStyle = '#00d4ff';
+  platforms.forEach(p=>ctx.fillRect(p.x,p.y,p.w,p.h));
+  // player
+  ctx.fillStyle = '#00ffff';
+  ctx.fillRect(player.x,player.y,player.w,player.h);
+  // hearts
+  heartItems.forEach(h=>{
+    if(!h.collected){
+      ctx.fillStyle = '#ff0055';
+      ctx.beginPath();
+      ctx.arc(h.x+5,h.y+5,5,0,Math.PI*2);
+      ctx.arc(h.x+15,h.y+5,5,0,Math.PI*2);
+      ctx.lineTo(h.x+10,h.y+15);
+      ctx.fill();
+    }
+  })
+  requestAnimationFrame(draw);
+}
 
-            playHurt() {
-                if (!this.enabled || !this.ctx) return;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.3);
-                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + 0.3);
-            }
-
-            playWin() {
-                if (!this.enabled || !this.ctx) return;
-                const notes = [261.63, 329.63, 392.00, 523.25];
-                notes.forEach((freq, index) => {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime + index * 0.1);
-                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + index * 0.1 + 0.2);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start(this.ctx.currentTime + index * 0.1);
-                    osc.stop(this.ctx.currentTime + index * 0.1 + 0.2);
-                });
-            }
+// mobile controls
+['left','right','jump'].forEach(id=>{
+  const btn = document.getElementById(id);
+  btn.addEventListener('touchstart',()=>{
+    if(!comboStart) comboStart = Date.now();
+    if(id==='left') keys.left=true;
+    if(id==='right') keys.right=true;
+    if(id==='jump' && player.onGround) player.vy=-12;
+    
+    // 5 second admin combo
+    if(keys.left && keys.right && keys.jump){
+      clearTimeout(comboTimer);
+      comboTimer = setTimeout(()=>{
+        if(Date.now()-comboStart >= 5000){
+          document.getElementById('adminMenu').style.display='block';
+          document.getElementById('adminLevel').value=level;
+          document.getElementById('adminHearts').value=hearts;
         }
+      },5000)
+    }
+  })
+  btn.addEventListener('touchend',()=>{
+    if(id==='left') keys.left=false;
+    if(id==='right') keys.right=false;
+    if(id==='jump') keys.jump=false;
+    if(!keys.left && !keys.right && !keys.jump) comboStart=0;
+  })
+})
 
-        const audio = new SoundFX();
+function applyAdmin(){
+  level = parseInt(document.getElementById('adminLevel').value);
+  hearts = parseInt(document.getElementById('adminHearts').value);
+  document.getElementById('level').innerText = level;
+  document.getElementById('hearts').innerText = hearts;
+  generateLevel(level);
+  player.x=60; player.y=320;
+  closeAdmin();
+}
+function skipLevel(){ level++; hearts=0; generateLevel(level); closeAdmin(); }
+function closeAdmin(){ document.getElementById('adminMenu').style.display='none'; }
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        const GAME_WIDTH = 800;
-        const GAME_HEIGHT = 450;
-        canvas.width = GAME_WIDTH;
-        canvas.height = GAME_HEIGHT;
-
-        const MAX_LIVES = 5;
-
-        let gameState = 'START';
-        let currentLevelIndex = 1;
-        let score = 0;
-        let lives = MAX_LIVES;
-        let activeLevel = null;
-
-        const keys = { left: false, right: false, up: false, jumpPressed: false };
-        const touchState = { left: false, right: false, jump: false, jumpPressed: false };
-
-        let particles = [];
-        function createParticles(x, y, color, count = 10) {
-            for (let i = 0; i < count; i++) {
-                particles.push({
-                    x, y,
-                    vx: (Math.random() - 0.5) * 6,
-                    vy: (Math.random() - 0.5) * 6,
-                    radius: Math.random() * 3 + 1,
-                    color,
-                    alpha: 1,
-                    life: Math.random() * 20 + 20
-                });
-            }
-        }
-
-        function generateProceduralLevel(levelNum) {
-            const level = {
-                playerStart: { x: 50, y: 310 },
-                portal: { x: 730, y: 80 },
-                platforms: [],
-                movingPlatforms: [],
-                trampolines: [],
-                activeCoins: [],
-                hazards: [],
-                enemies: []
-            };
-
-            let currX = 10;
-            let currY = 350;
-
-            const pathSteps = [];
-            pathSteps.push({ x: currX, y: currY, w: 150, isSafeStart: true });
-
-            const targetX = GAME_WIDTH - 120;
-            const targetY = 120 + Math.random() * 80;
-
-            currX += 150;
-
-            while (currX < targetX) {
-                const gapX = 45 + Math.random() * 55;
-                let nextX = currX + gapX;
-                if (nextX > targetX) nextX = targetX;
-
-                const remainingSteps = Math.ceil((targetX - nextX) / 80) || 1;
-                const distY = (targetY - currY) / remainingSteps;
-                let nextY = currY + distY + (Math.random() - 0.5) * 40;
-
-                nextY = Math.max(130, Math.min(370, nextY));
-
-                const heightDiff = currY - nextY;
-                let needsTrampoline = heightDiff > 65;
-
-                const platformWidth = Math.max(80, 125 - levelNum * 2);
-
-                pathSteps.push({
-                    x: nextX,
-                    y: nextY,
-                    w: platformWidth,
-                    needsTrampoline: needsTrampoline,
-                    isSafeStart: false
-                });
-
-                currX = nextX + platformWidth;
-                currY = nextY;
-            }
-
-            pathSteps.forEach((step, idx) => {
-                const isMoving = (!step.isSafeStart && levelNum >= 3 && Math.random() < 0.25 && idx < pathSteps.length - 1);
-
-                if (isMoving) {
-                    level.movingPlatforms.push({
-                        x: step.x,
-                        y: step.y,
-                        w: step.w,
-                        h: 18,
-                        startX: Math.max(10, step.x - 40),
-                        endX: Math.min(GAME_WIDTH - 10, step.x + 40),
-                        speed: 1 + Math.min(1.5, levelNum * 0.15),
-                        dir: 1
-                    });
-                } else {
-                    level.platforms.push({
-                        x: step.x,
-                        y: step.y,
-                        w: step.w,
-                        h: 20,
-                        color: '#1e293b'
-                    });
-
-                    if (!step.isSafeStart) {
-                        if (step.needsTrampoline || (levelNum >= 2 && Math.random() < 0.25)) {
-                            level.trampolines.push({
-                                x: step.x + step.w / 2 - 12,
-                                y: step.y - 10,
-                                w: 24,
-                                h: 10,
-                                bounceAnim: 0
-                            });
-                        }
-                        else if (levelNum >= 2 && Math.random() < 0.35 && step.w >= 90) {
-                            level.hazards.push({
-                                x: step.x + 30,
-                                y: step.y - 12,
-                                w: 25,
-                                h: 12
-                            });
-                        }
-                        else if (levelNum >= 2 && Math.random() < 0.3 && step.w >= 90) {
-                            level.enemies.push({
-                                x: step.x + 10,
-                                y: step.y - 20,
-                                range: [step.x, step.x + step.w - 20],
-                                speed: 0.8 + Math.min(1.2, levelNum * 0.1),
-                                dir: 1,
-                                w: 20,
-                                h: 20
-                            });
-                        }
-                    }
-                }
-
-                if (Math.random() < 0.8) {
-                    level.activeCoins.push({
-                        x: step.x + step.w / 2,
-                        y: step.y - 28
-                    });
-                }
-            });
-
-            const lastStep = pathSteps[pathSteps.length - 1];
-            level.portal = { x: lastStep.x + lastStep.w / 2 - 15, y: lastStep.y - 50 };
-
-            return level;
-        }
-
-        const player = {
-            x: 0, y: 0,
-            w: 24, h: 32,
-            vx: 0, vy: 0,
-            speed: 4.5,
-            jumpForce: -10.0,
-            trampolineForce: -15.5,
-            gravity: 0.5,
-            grounded: false,
-            jumpsLeft: 2,
-            facingRight: true,
-            animFrame: 0,
-            invulnerable: 0,
-
-            reset(startPos) {
-                this.x = startPos.x;
-                this.y = startPos.y;
-                this.vx = 0;
-                this.vy = 0;
-                this.grounded = true;
-                this.jumpsLeft = 2;
-                this.invulnerable = 90;
-            },
-
-            update(level) {
-                if (this.invulnerable > 0) this.invulnerable--;
-
-                const moveLeft = keys.left || touchState.left;
-                const moveRight = keys.right || touchState.right;
-                const jumpTriggered = keys.jumpPressed || touchState.jumpPressed;
-
-                if (moveLeft) {
-                    this.vx = -this.speed;
-                    this.facingRight = false;
-                } else if (moveRight) {
-                    this.vx = this.speed;
-                    this.facingRight = true;
-                } else {
-                    this.vx *= 0.7;
-                }
-
-                if (jumpTriggered && this.jumpsLeft > 0) {
-                    this.vy = this.jumpForce;
-                    this.grounded = false;
-                    this.jumpsLeft--;
-                    audio.playJump();
-                    createParticles(this.x + this.w/2, this.y + this.h, '#38bdf8', 8);
-                }
-
-                keys.jumpPressed = false;
-                touchState.jumpPressed = false;
-
-                this.vy += this.gravity;
-                if (this.vy > 12) this.vy = 12;
-
-                this.x += this.vx;
-                this.checkHorizontalCollisions(level);
-
-                this.y += this.vy;
-                this.grounded = false;
-                this.checkVerticalCollisions(level);
-
-                if (level.trampolines) {
-                    level.trampolines.forEach(t => {
-                        if (isColliding(this, t) && this.vy > 0) {
-                            this.vy = this.trampolineForce;
-                            this.grounded = false;
-                            this.jumpsLeft = 1;
-                            t.bounceAnim = 10;
-                            audio.playBounce();
-                            createParticles(t.x + t.w/2, t.y, '#22c55e', 14);
-                        }
-                    });
-                }
-
-                if (this.x < 0) this.x = 0;
-                if (this.x + this.w > GAME_WIDTH) this.x = GAME_WIDTH - this.w;
-
-                if (this.y > GAME_HEIGHT + 50) {
-                    takeDamage();
-                }
-            },
-
-            checkHorizontalCollisions(level) {
-                const allPlatforms = [...level.platforms, ...(level.movingPlatforms || [])];
-                for (let p of allPlatforms) {
-                    if (isColliding(this, p)) {
-                        if (this.vx > 0) {
-                            this.x = p.x - this.w;
-                        } else if (this.vx < 0) {
-                            this.x = p.x + p.w;
-                        }
-                    }
-                }
-            },
-
-            checkVerticalCollisions(level) {
-                const allPlatforms = [...level.platforms, ...(level.movingPlatforms || [])];
-                for (let p of allPlatforms) {
-                    if (isColliding(this, p)) {
-                        if (this.vy > 0) {
-                            this.y = p.y - this.h;
-                            this.vy = 0;
-                            this.grounded = true;
-                            this.jumpsLeft = 2;
-                            if (p.startX !== undefined) {
-                                this.x += (p.speed * p.dir);
-                            }
-                        } else if (this.vy < 0) {
-                            this.y = p.y + p.h;
-                            this.vy = 0;
-                        }
-                    }
-                }
-            },
-
-            draw() {
-                ctx.save();
-                if (this.invulnerable % 4 > 2) {
-                    ctx.restore();
-                    return;
-                }
-
-                ctx.fillStyle = '#06b6d4';
-                ctx.fillRect(this.x, this.y, this.w, this.h);
-
-                ctx.fillStyle = '#f43f5e';
-                const visorX = this.facingRight ? this.x + 12 : this.x + 2;
-                ctx.fillRect(visorX, this.y + 6, 10, 6);
-
-                ctx.fillStyle = '#3b82f6';
-                const backpackX = this.facingRight ? this.x + 2 : this.x + 16;
-                ctx.fillRect(backpackX, this.y + 10, 6, 14);
-
-                if (Math.abs(this.vx) > 0.5 && this.grounded) {
-                    this.animFrame += 0.2;
-                    const legOffset = Math.sin(this.animFrame) * 4;
-                    ctx.fillStyle = '#0284c7';
-                    ctx.fillRect(this.x + 4, this.y + this.h, 5, legOffset > 0 ? legOffset : 0);
-                    ctx.fillRect(this.x + 15, this.y + this.h, 5, legOffset < 0 ? -legOffset : 0);
-                }
-
-                ctx.restore();
-            }
-     
+generateLevel(1);
+setInterval(update,1000/60);
+draw();
+</script>
+</body>
+</html>
